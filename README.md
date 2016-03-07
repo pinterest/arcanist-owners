@@ -10,15 +10,19 @@ It is implemented as an `arc owners` command:
         Without paths, the files changed in your local working copy will
         be used.
 
-This is similar to the built-in `arc cover` command, but instead of inferring
-likely owners based on "blame" statistics, `arc owners` uses the ownership
-definitions specified in [Phabricator's Owners application][phab-owners].
-
 ```
 $ arc owners README.md
 Arcanist Extensions (jparise)
   README.md
 ```
+
+This is similar to the built-in `arc cover` command, but instead of inferring
+likely owners based on "blame" statistics, `arc owners` uses the ownership
+definitions specified in [Phabricator's Owners application][phab-owners].
+
+It's possible that `arc cover` could evolve to the point where `arc owners`
+becomes redundant. [T2443](https://secure.phabricator.com/T2443) tracks
+progress in that direction.
 
 ## Installation
 
