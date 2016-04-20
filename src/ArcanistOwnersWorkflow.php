@@ -74,11 +74,12 @@ EOTEXT
 
     foreach ($paths as $path) {
       $path_projects = $this->queryProjects($path);
-      foreach ($path_projects as $phid => $project) {
+      foreach ($path_projects as $project) {
+        $phid = $project['phid'];
         if (!isset($projects[$phid])) {
           $projects[$phid] = array(
-            'name' => $project['name'],
-            'owners' => $project['owners'],
+            'name' => $project['fields']['name'],
+            'owners' => ipull($project['fields']['owners'], 'ownerPHID'),
           );
         }
         $projects[$phid]['paths'][] = $path;
@@ -108,14 +109,17 @@ EOTEXT
   }
 
   private function queryProjects($path) {
-    $projects = $this->getConduit()->callMethodSynchronous(
-      'owners.query',
+    $result = $this->getConduit()->callMethodSynchronous(
+      'owners.search',
       array(
-        'repositoryCallsign' => $this->getRepositoryCallsign(),
-        'path' => $path,
+        'constraints' => array(
+          'repositories' => array($this->getRepositoryPHID()),
+          'paths' => array($path),
+          'status' => array('active'),
+        ),
       ));
 
-    return $projects;
+    return idx($result, 'data', array());
   }
 
   private function resolveNames($phids) {
