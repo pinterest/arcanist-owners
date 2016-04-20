@@ -88,10 +88,7 @@ EOTEXT
 
     // Gather the owners across all of the discovered projects. Owners may
     // be either individual users or project tags.
-    $owner_phids = array();
-    foreach ($projects as $project) {
-      $owner_phids = array_merge($owner_phids, $project['owners']);
-    }
+    $owner_phids = array_mergev(ipull($projects, 'owners'));
     $owner_names = $this->resolveNames($owner_phids);
 
     foreach ($projects as $project) {
