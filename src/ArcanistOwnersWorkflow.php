@@ -112,7 +112,7 @@ EOTEXT
         'constraints' => array(
           'repositories' => array($this->getRepositoryPHID()),
           'paths' => array($path),
-          'status' => array('active'),
+          'statuses' => array('active'),
         ),
       ));
 
