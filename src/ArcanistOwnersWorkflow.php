@@ -93,6 +93,7 @@ EOTEXT
 
     foreach ($projects as $project) {
       $names = array_select_keys($owner_names, $project['owners']);
+      asort($names);
 
       echo phutil_console_format("**%s** (%s)\n",
         $project['name'],
