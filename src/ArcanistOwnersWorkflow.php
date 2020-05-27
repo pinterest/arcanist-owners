@@ -70,10 +70,19 @@ EOTEXT
       null,
       ArcanistRepositoryAPI::FLAG_UNTRACKED);
 
+    $base_uri = $this
+      ->getWorkingCopy()
+      ->getProjectConfig('phabricator.uri');
+
     // Map each input path to all of its matching projects.
     $bypath = array();
     foreach ($this->queryProjects($paths) as $project) {
       $fields = idx($project, 'fields', array());
+      if (!empty($base_uri)) {
+        $fields['url'] = (string)id(new PhutilURI($base_uri))
+            ->setPath("/owners/package/{$project['id']}/");
+      }
+
       foreach ($this->matchProjectPaths($project, $paths) as $path) {
         $bypath[$path][] = $fields;
       }
@@ -107,7 +116,7 @@ EOTEXT
       foreach (isort($projects, 'dominion') as $project) {
         echo phutil_console_format("  [%6s] %s\n",
           $project['dominion']['value'],
-          $project['name']);
+          $this->linkify($project['name'], $project['url']));
       }
     }
   }
@@ -160,5 +169,10 @@ EOTEXT
       }
     }
     return false;
+  }
+
+  // https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+  private function linkify($text, $url) {
+    return (!empty($url)) ? "\e]8;;$url\e\\$text\e]8;;\e\\" : $text;
   }
 }
