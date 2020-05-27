@@ -143,6 +143,9 @@ EOTEXT
     $included = array();
     $excluded = array();
     foreach ($project['attachments']['paths']['paths'] as $spec) {
+      if ($spec['repositoryPHID'] !== $this->getRepositoryPHID()) {
+        continue;
+      }
       $path = trim($spec['path'], '/');
       if (empty($spec['excluded'])) {
         $included[] = $path;
