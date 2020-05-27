@@ -12,8 +12,8 @@ It is implemented as an `arc owners` command:
 
 ```
 $ arc owners README.md
-Arcanist Extensions (jparise)
-  README.md
+README.md
+  [strong] Arcanist Extensions
 ```
 
 This is similar to the built-in `arc cover` command, but instead of inferring

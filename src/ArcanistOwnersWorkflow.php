@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2016 Pinterest, Inc.
+ * Copyright 2020 Pinterest, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,71 +70,95 @@ EOTEXT
       null,
       ArcanistRepositoryAPI::FLAG_UNTRACKED);
 
-    $projects = array();
-
-    foreach ($paths as $path) {
-      $path_projects = $this->queryProjects($path);
-      foreach ($path_projects as $project) {
-        $phid = $project['phid'];
-        if (!isset($projects[$phid])) {
-          $projects[$phid] = array(
-            'name' => $project['fields']['name'],
-            'owners' => ipull($project['fields']['owners'], 'ownerPHID'),
-          );
-        }
-        $projects[$phid]['paths'][] = $path;
+    // Map each input path to all of its matching projects.
+    $bypath = array();
+    foreach ($this->queryProjects($paths) as $project) {
+      $fields = idx($project, 'fields', array());
+      foreach ($this->matchProjectPaths($project, $paths) as $path) {
+        $bypath[$path][] = $fields;
       }
     }
+    ksort($bypath);
 
-    // Gather the owners across all of the discovered projects. Owners may
-    // be either individual users or project tags.
-    $owner_phids = array_mergev(ipull($projects, 'owners'));
-    $owner_names = $this->resolveNames($owner_phids);
+    // The paths are initially sorted alphabetically, but we display them
+    // grouped based on their common projects. For example, if we have paths
+    // "A", "B', "C", and both "A" and "C" are owned by the same projects, the
+    // output will look like:
+    //
+    //    A
+    //    C
+    //      Project Bar
+    //      Project Baz
+    //    B
+    //      Project Foo
+    //
+    // Projects within each group are grouped by their ownership strength
+    // ("strong" before "weak") and then listed alphabetically.
+    while (!empty($bypath)) {
+      $projects = reset($bypath);
 
-    foreach ($projects as $project) {
-      $names = array_select_keys($owner_names, $project['owners']);
-      asort($names);
+      foreach ($bypath as $path => $path_projects) {
+        if ($path_projects === $projects) {
+          echo phutil_console_format("**%s**\n", $path);
+          unset($bypath[$path]);
+        }
+      }
 
-      echo phutil_console_format("**%s** (%s)\n",
-        $project['name'],
-        !empty($names) ? implode(', ', $names) : '<none>');
-
-      asort($project['paths']);
-      foreach ($project['paths'] as $path) {
-        echo "  $path\n";
+      foreach (isort($projects, 'dominion') as $project) {
+        echo phutil_console_format("  [%6s] %s\n",
+          $project['dominion']['value'],
+          $project['name']);
       }
     }
   }
 
-  private function queryProjects($path) {
+  private function queryProjects($paths) {
     $result = $this->getConduit()->callMethodSynchronous(
       'owners.search',
       array(
         'constraints' => array(
           'repositories' => array($this->getRepositoryPHID()),
-          'paths' => array($path),
+          'paths' => $paths,
           'statuses' => array('active'),
         ),
+        'attachments' => array(
+          'paths' => true,
+        ),
+        'order' => 'name'
       ));
 
     return idx($result, 'data', array());
   }
 
-  private function resolveNames($phids) {
-    $names = array();
-    if ($phids) {
-      $objects = $this->getConduit()->callMethodSynchronous(
-        'phid.query',
-        array(
-          'phids' => $phids,
-        ));
-
-      foreach ($objects as $phid => $object) {
-        $prefix = ($object['type'] == 'PROJ') ? '#' : '';
-        $names[$phid] = $prefix.$object['name'];
+  private function matchProjectPaths($project, $paths) {
+    $included = array();
+    $excluded = array();
+    foreach ($project['attachments']['paths']['paths'] as $spec) {
+      $path = trim($spec['path'], '/');
+      if (empty($spec['excluded'])) {
+        $included[] = $path;
+      } else {
+        $excluded[] = $path;
       }
     }
 
-    return $names;
+    $matches = array();
+    foreach ($paths as $path) {
+      if ($this->containsPath($included, $path) &&
+          !$this->containsPath($excluded, $path)) {
+        $matches[] = $path;
+      }
+    }
+
+    return $matches;
+  }
+
+  private function containsPath($paths, $candidate) {
+    foreach ($paths as $path) {
+      if (substr($candidate, 0, strlen($path)) === $path) {
+        return true;
+      }
+    }
+    return false;
   }
 }
