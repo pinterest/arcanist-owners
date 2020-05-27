@@ -1,7 +1,5 @@
 # Arcanist Owners
 
-[![Build Status](https://travis-ci.org/pinterest/arcanist-owners.svg)](https://travis-ci.org/pinterest/arcanist-owners)
-
 This is an [Arcanist][] extension that displays file ownership information.
 It is implemented as an `arc owners` command:
 
