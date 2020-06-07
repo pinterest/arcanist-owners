@@ -74,54 +74,54 @@ EOTEXT
       ->getWorkingCopy()
       ->getProjectConfig('phabricator.uri');
 
-    // Map each input path to all of its matching projects.
+    // Map each input path to all of its matching packages.
     $bypath = array();
-    foreach ($this->queryProjects($paths) as $project) {
-      $fields = idx($project, 'fields', array());
+    foreach ($this->queryPackages($paths) as $package) {
+      $fields = idx($package, 'fields', array());
       if (!empty($base_uri)) {
         $fields['url'] = (string)id(new PhutilURI($base_uri))
-            ->setPath("/owners/package/{$project['id']}/");
+            ->setPath("/owners/package/{$package['id']}/");
       }
 
-      foreach ($this->matchProjectPaths($project, $paths) as $path) {
+      foreach ($this->matchPackagePaths($package, $paths) as $path) {
         $bypath[$path][] = $fields;
       }
     }
     ksort($bypath);
 
     // The paths are initially sorted alphabetically, but we display them
-    // grouped based on their common projects. For example, if we have paths
-    // "A", "B', "C", and both "A" and "C" are owned by the same projects, the
+    // grouped based on their common package. For example, if we have paths
+    // "A", "B', "C", and both "A" and "C" are owned by the same packages, the
     // output will look like:
     //
     //    A
     //    C
-    //      Project Bar
-    //      Project Baz
+    //      Package Bar
+    //      Package Baz
     //    B
-    //      Project Foo
+    //      Package Foo
     //
-    // Projects within each group are grouped by their ownership strength
+    // Packages within each group are grouped by their ownership strength
     // ("strong" before "weak") and then listed alphabetically.
     while (!empty($bypath)) {
-      $projects = reset($bypath);
+      $packages = reset($bypath);
 
-      foreach ($bypath as $path => $path_projects) {
-        if ($path_projects === $projects) {
+      foreach ($bypath as $path => $path_packages) {
+        if ($path_packages === $packages) {
           echo phutil_console_format("**%s**\n", $path);
           unset($bypath[$path]);
         }
       }
 
-      foreach (isort($projects, 'dominion') as $project) {
+      foreach (isort($packages, 'dominion') as $package) {
         echo phutil_console_format("  [%6s] %s\n",
-          $project['dominion']['value'],
-          $this->linkify($project['name'], $project['url']));
+          $package['dominion']['value'],
+          $this->linkify($package['name'], $package['url']));
       }
     }
   }
 
-  private function queryProjects($paths) {
+  private function queryPackages($paths) {
     $result = $this->getConduit()->callMethodSynchronous(
       'owners.search',
       array(
@@ -139,10 +139,10 @@ EOTEXT
     return idx($result, 'data', array());
   }
 
-  private function matchProjectPaths($project, $paths) {
+  private function matchPackagePaths($package, $paths) {
     $included = array();
     $excluded = array();
-    foreach ($project['attachments']['paths']['paths'] as $spec) {
+    foreach ($package['attachments']['paths']['paths'] as $spec) {
       if ($spec['repositoryPHID'] !== $this->getRepositoryPHID()) {
         continue;
       }
