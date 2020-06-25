@@ -102,7 +102,8 @@ EOTEXT
     //      Package Foo
     //
     // Packages within each group are grouped by their ownership strength
-    // ("strong" before "weak") and then listed alphabetically.
+    // ("strong" before "weak") and then listed alphabetically. Weak owners
+    // aren't shown if there are stronger owners available.
     while (!empty($bypath)) {
       $packages = reset($bypath);
 
@@ -113,10 +114,17 @@ EOTEXT
         }
       }
 
+      $previouslyWeak = true;
       foreach (isort($packages, 'dominion') as $package) {
-        echo phutil_console_format("  [%6s] %s\n",
-          $package['dominion']['value'],
+        $weak = $package['dominion']['value'] == 'weak';
+        if ($weak && !$previouslyWeak) {
+          break;
+        }
+
+        echo phutil_console_format("  %s\n",
           $this->linkify($package['name'], $package['url']));
+        
+        $previouslyWeak = $weak;
       }
     }
   }
