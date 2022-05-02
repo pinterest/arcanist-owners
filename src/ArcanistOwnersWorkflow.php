@@ -26,7 +26,7 @@ final class ArcanistOwnersWorkflow extends ArcanistWorkflow {
 
     public function getCommandSynopses() {
         return phutil_console_format(<<<EOTEXT
-      **owners** [__path__ ...]
+      **owners** [__options__] [__path__ ...]
 EOTEXT
       );
     }
@@ -56,6 +56,15 @@ EOTEXT
 
   public function getArguments() {
     return array(
+      'output' => array(
+        'param' => 'format',
+        'support' => array(
+          'json',
+        ),
+        'help' => pht(
+          "With '%s', show owners in machine-readable JSON format.",
+          'json'),
+      ),
       '*' => 'paths',
     );
   }
@@ -89,6 +98,18 @@ EOTEXT
     }
     ksort($bypath);
 
+    if ($this->getArgument('output') == 'json') {
+      $this->outputJson($bypath);
+    } else {
+      $this->outputText($bypath);
+    }
+  }
+
+  protected function outputJson($bypath) {
+    echo json_encode($bypath)."\n";
+  }
+
+  protected function outputText($bypath) {
     // The paths are initially sorted alphabetically, but we display them
     // grouped based on their common package. For example, if we have paths
     // "A", "B', "C", and both "A" and "C" are owned by the same packages, the

@@ -3,12 +3,15 @@
 This is an [Arcanist][] extension that displays file ownership information.
 It is implemented as an `arc owners` command:
 
-    owners [path ...]
+    owners [options] [path ...]
         Supports: git, hg
         Display ownership information for a list of files.
 
         Without paths, the files changed in your local working copy will
         be used.
+
+        --output format
+            With 'json', show owners in machine-readable JSON format.
 
 ```
 $ arc owners README.md
