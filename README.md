@@ -75,5 +75,25 @@ Then, enable the module in your project-level `.arcconfig` file:
 }
 ```
 
+## Configuration
+
+These features can be optionally enabled with configuration values.
+
+### Slack Channel
+
+If you have Slack channels associated with owners via a [custom field][], `arc owners` will display the Slack channel next to each owner package name where available.
+
+Enable this feature by specifying the following configuration values in `.arcconfig`:
+
+```json
+{
+  "slack.uri" : "https://<your-workspace>.slack.com/",
+  "owners.slack_field" : "custom.Pinterest:owners-slack-channel"
+}
+```
+
+The [custom field][] specified by `owners.slack_field` is expected to exist on `Owners`, and to be a `text` field containing only the Slack channel name.
+
 [Arcanist]: https://secure.phabricator.com/book/phabricator/article/arcanist/
 [phab-owners]: https://secure.phabricator.com/book/phabricator/article/owners/
+[custom field]: https://secure.phabricator.com/book/phabricator/article/custom_fields/
