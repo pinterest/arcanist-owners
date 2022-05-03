@@ -83,6 +83,14 @@ EOTEXT
       ->getWorkingCopy()
       ->getProjectConfig('phabricator.uri');
 
+    $slack_uri = $this
+      ->getWorkingCopy()
+      ->getProjectConfig('slack.uri');
+
+    $slack_field = $this
+      ->getWorkingCopy()
+      ->getProjectConfig('owners.slack_field');
+
     // Map each input path to all of its matching packages.
     $bypath = array();
     foreach ($this->queryPackages($paths) as $package) {
@@ -90,6 +98,17 @@ EOTEXT
       if (!empty($base_uri)) {
         $fields['url'] = (string)id(new PhutilURI($base_uri))
             ->setPath("/owners/package/{$package['id']}/");
+      }
+
+      if (!empty($slack_field)) {
+        $channel_name = idx($fields, $slack_field);
+        $fields['slack']['channel_name'] = $channel_name ?
+          ltrim(trim($channel_name), '#') : null;
+        if (!empty($slack_uri)) {
+          $fields['slack']['channel_uri'] = $fields['slack']['channel_name'] ?
+          (string)id(new PhutilURI($slack_uri))
+            ->setPath("/channels/{$fields['slack']['channel_name']}/") : null;
+        }
       }
 
       foreach ($this->matchPackagePaths($package, $paths) as $path) {
@@ -142,9 +161,17 @@ EOTEXT
           break;
         }
 
-        echo phutil_console_format("  %s\n",
-          $this->linkify($package['name'], $package['url']));
-        
+        $slack = '';
+        if ($channel = idx(idx($package, 'slack', array()), 'channel_name')) {
+          $slack_data = idx($package, 'slack', array());
+          $slack = sprintf(' (Slack: %s)', idx($slack_data, 'channel_uri') ?
+            $this->linkify('#'.$channel, idx($slack_data, 'channel_uri')) :
+            '#'.$channel);
+        }
+
+        echo phutil_console_format("  %s%s\n",
+          $this->linkify($package['name'], $package['url']), $slack);
+
         $previouslyWeak = $weak;
       }
     }
